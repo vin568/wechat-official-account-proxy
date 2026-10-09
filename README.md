@@ -136,6 +136,8 @@ https://api.weixin.qq.com/cgi-bin/draft/add
 
 加上 `Authorization: Bearer <PROXY_KEY>`。不要自己拼 `access_token`，除非你明确想用另一套凭证。
 
+Agent 调用时先读 `skills/wechat-oa-proxy/SKILL.md`。`PROXY_KEY` 和代理地址分别从环境变量 `PROXY_KEY`、`WECHAT_PROXY_BASE_URL` 读取，不要写进代码或提交。
+
 封面、正文图、草稿都走同一个前缀，例如：
 
 - `POST /cgi-bin/media/uploadimg`
