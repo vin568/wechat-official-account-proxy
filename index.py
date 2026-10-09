@@ -19,7 +19,13 @@ from hmac import compare_digest
 
 UPSTREAM = "https://api.weixin.qq.com"
 ALLOWED_PREFIXES = ("/cgi-bin/", "/wxa/")
-BLOCKED_PATHS = frozenset({"/cgi-bin/token", "/cgi-bin/stable_token"})
+BLOCKED_PATHS = frozenset({
+    "/cgi-bin/token",
+    "/cgi-bin/stable_token",
+    # Publishing or deleting published articles is outside this proxy.
+    "/cgi-bin/freepublish/submit",
+    "/cgi-bin/freepublish/delete",
+})
 DROP_REQUEST_HEADERS = frozenset({
     "authorization",
     "host",
@@ -145,7 +151,16 @@ def normalize_path(path):
     parts = path.split("/")
     if any(part in ("", ".", "..") for part in parts[1:]):
         return None
-    normalized = "/" + "/".join(urllib.parse.quote(part, safe="") for part in parts[1:])
+    decoded = []
+    for part in parts[1:]:
+        try:
+            value = urllib.parse.unquote(part, errors="strict")
+        except UnicodeDecodeError:
+            return None
+        if "/" in value or "\\" in value or value in ("", ".", ".."):
+            return None
+        decoded.append(value)
+    normalized = "/" + "/".join(urllib.parse.quote(part, safe="") for part in decoded)
     if normalized in BLOCKED_PATHS or not normalized.startswith(ALLOWED_PREFIXES):
         return None
     return normalized

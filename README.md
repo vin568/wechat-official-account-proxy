@@ -7,7 +7,7 @@
 ## 行为
 
 - 调用方带 `Authorization: Bearer <PROXY_KEY>`。这个头会在转发前删掉。
-- 只转发 `/cgi-bin/` 和 `/wxa/`。`/cgi-bin/token`、`/cgi-bin/stable_token` 直接 403，AppSecret 不出函数。
+- 只转发 `/cgi-bin/` 和 `/wxa/`。以下路径直接 403，不会向微信取 token，也不会转发：`/cgi-bin/token`、`/cgi-bin/stable_token`、`/cgi-bin/freepublish/submit`、`/cgi-bin/freepublish/delete`。前两个避免 AppSecret 流出；后两个是发布和删除已发布内容。
 - query 里没有 `access_token` 时自动补上。微信返回 `40001` 或 `42001` 时强制刷新一次再重放。调用方自己带了 token 则不替换、也不刷新。
 - 不跟随上游重定向，不读取 `HTTP_PROXY` / `HTTPS_PROXY`，避免出口绕过 NAT EIP。
 
@@ -120,7 +120,7 @@ curl -sS -H "Authorization: Bearer $PROXY_KEY" \
 |---|---|
 | HTTP 401，`unauthorized` | `PROXY_KEY` 不对或没带 |
 | HTTP 500，`PROXY_KEY is not configured` 或 `wechat credentials are not configured` | 环境变量没配上 |
-| HTTP 403，`path not allowed` | 路径不在 `/cgi-bin/`、`/wxa/`，或打到了 token 接口 |
+| HTTP 403，`path not allowed` | 路径不在 `/cgi-bin/`、`/wxa/`，或打到了 token、发布、删除已发布内容接口 |
 | HTTP 502，body 里 `errcode` 40164 | 出口 IP 不在白名单，或默认网卡仍在走动态 IP。`errmsg` 里的 IP 才是微信看到的出口 |
 | HTTP 502，body 里 `errcode` 40013 | AppID 或 AppSecret 错 |
 | HTTP 200，body 里是微信业务 `errcode` | 链路通了。空 `articles` 会报参数错误，这是预期 |
